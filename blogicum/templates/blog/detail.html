@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}
+  {{ object.title }} | {% if object.location and object.location.is_published %}{{ object.location.name }}{% else %}Планета Земля{% endif %} |
+  {{ object.pub_date|date:"d E Y" }}
+{% endblock %}
+{% block content %}
+  <div class="col d-flex justify-content-center">
+    <div class="card" style="width: 40rem;">
+      <div class="card-body">
+        {% if object.image %}
+          <a href="{{ object.image.url }}" target="_blank">
+            <img class="border-3 rounded img-fluid img-thumbnail mb-2 mx-auto d-block" src="{{ object.image.url }}">
+          </a>
+        {% endif %}
+        <h5 class="card-title">{{ object.title }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">
+          <small>
+            {% if not object.is_published %}
+              <p class="text-danger">Пост снят с публикации админом</p>
+            {% elif not object.category.is_published %}
+              <p class="text-danger">Выбранная категория снята с публикации админом</p>
+            {% endif %}
+            {{ object.pub_date|date:"d E Y, H:i" }} | {% if object.location and object.location.is_published %}{{ object.location.name }}{% else %}Планета Земля{% endif %}<br>
+            От автора <a class="text-muted" href="{% url 'blog:profile' object.author %}">@{{ object.author.username }}</a> в
+            категории {% include "includes/category_link.html" %}
+          </small>
+        </h6>
+        <p class="card-text">{{ object.text|linebreaksbr }}</p>
+        {% if user == object.author %}
+          <div class="mb-2">
+            <a class="btn btn-sm text-muted" href="{% url 'blog:edit' object.id %}" role="button">
+              Отредактировать публикацию
+            </a>
+            <a class="btn btn-sm text-muted" href="{% url 'blog:delete' object.id %}" role="button">
+              Удалить публикацию
+            </a>
+          </div>
+        {% endif %}
+        {% include "includes/comments.html" %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
