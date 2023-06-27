@@ -17,7 +17,7 @@ dnow = timezone.now()
 User = get_user_model()
 
 
-class IndexListView(ListView, LoginRequiredMixin):
+class IndexListView(LoginRequiredMixin, ListView):
     template_name = 'blog/index.html'
     model = Post
     queryset = Post.objects.filter(
@@ -90,7 +90,7 @@ class ProfileListView(ListView, LoginRequiredMixin):
         ).filter(author=self.author,)
 
 
-class ProfileUpdateView(UpdateView, LoginRequiredMixin):
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     '''Сраница редактирования профиля'''
     template_name = 'blog/user.html'
     model = User
@@ -120,23 +120,29 @@ class ProfileUpdateView(UpdateView, LoginRequiredMixin):
         )
 
 
-class PostCreateView(CreateView, LoginRequiredMixin):
+class PostCreateView(LoginRequiredMixin, CreateView):
     '''Страница создания поста'''
     template_name = 'blog/create.html'
     model = Post
     form_class = PostForm
-    success_url = reverse_lazy('blog:index')
 
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
 
+    def get_success_url(self):
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.request.user}
+        )
 
-class PostUpdateView(UpdateView, LoginRequiredMixin):
+
+class PostUpdateView(LoginRequiredMixin, UpdateView):
     '''Страница редактирования поста'''
     template_name = 'blog/create.html'
     model = Post
     form_class = PostForm
+    pk_url_kwarg = 'pk'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -153,7 +159,7 @@ class PostUpdateView(UpdateView, LoginRequiredMixin):
         return reverse('blog:post_detail', kwargs={'pk': self.kwargs['pk']})
 
 
-class PostDeleteView(DeleteView, LoginRequiredMixin):
+class PostDeleteView(LoginRequiredMixin, DeleteView):
     '''Страница удаления поста'''
     template_name = 'blog/create.html'
     model = Post
@@ -166,7 +172,7 @@ class PostDeleteView(DeleteView, LoginRequiredMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
-class PostDetailView(DetailView, LoginRequiredMixin):
+class PostDetailView(LoginRequiredMixin, DetailView):
     '''Отображение деталий поста'''
     model = Post
     template_name = 'blog/detail.html'
@@ -193,7 +199,7 @@ def add_comment(request, pk):
     return redirect('blog:post_detail', pk=pk)
 
 
-class CommentUpdateView(UpdateView, LoginRequiredMixin):
+class CommentUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'blog/comment.html'
     model = Comment
     form_class = CommentForm
@@ -210,7 +216,7 @@ class CommentUpdateView(UpdateView, LoginRequiredMixin):
                        kwargs={'pk': self.kwargs['post_id']})
 
 
-class CommentDeleteView(DeleteView, LoginRequiredMixin):
+class CommentDeleteView(LoginRequiredMixin, DeleteView):
     '''Страница удаления поста'''
     template_name = 'blog/comment.html'
     model = Comment
