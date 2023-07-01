@@ -82,7 +82,7 @@ class ProfileListView(ListView, LoginRequiredMixin):
 
     def get_queryset(self):
         self.author = get_object_or_404(
-            User, username=self.kwargs['username']
+            User, username=self.kwargs.get('username')
         )
         return Post.objects.select_related(
             'location',
