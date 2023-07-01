@@ -1,5 +1,5 @@
 from typing import Any, Dict
-
+from django.http import Http404
 from blog.models import Post, Category, Comment
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
@@ -189,6 +189,19 @@ class PostDetailView(LoginRequiredMixin, DetailView):
             self.object.comments.select_related('author')
         )
         return context
+
+    def get_object(self, queryset=None):
+        post = get_object_or_404(Post, pk=self.kwargs.get("pk"))
+        if post.author != self.request.user:
+            if any(
+                [
+                    post.pub_date > dnow,
+                    not post.is_published,
+                    not post.category.is_published,
+                ]
+            ):
+                raise Http404
+        return post
 
 
 @login_required
