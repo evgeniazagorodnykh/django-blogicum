@@ -82,7 +82,7 @@ class ProfileListView(ListView, LoginRequiredMixin):
 
     def get_queryset(self):
         self.author = get_object_or_404(
-            User, username=self.kwargs.get('username')
+            User, username=self.kwargs['username']
         )
         return Post.objects.select_related(
             'location',
@@ -109,9 +109,9 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def dispatch(self, request, *args, **kwargs):
-        profile = get_object_or_404(User, username=self.kwargs.get('username'))
+        profile = get_object_or_404(User, username=self.kwargs['username'])
         if profile != self.request.user:
-            return redirect('blog:profile', self.kwargs.get('username'))
+            return redirect('blog:profile', self.kwargs['username'])
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
