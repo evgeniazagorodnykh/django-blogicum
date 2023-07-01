@@ -82,7 +82,7 @@ class ProfileListView(ListView, LoginRequiredMixin):
 
     def get_queryset(self):
         self.author = get_object_or_404(
-            User, username=self.kwargs['username']
+            User, username=self.kwargs.get('username')
         )
         return Post.objects.select_related(
             'location',
@@ -109,9 +109,9 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def dispatch(self, request, *args, **kwargs):
-        profile = get_object_or_404(User, username=self.kwargs['username'])
+        profile = get_object_or_404(User, username=self.kwargs.get('username'))
         if profile != self.request.user:
-            return redirect('blog:profile', self.kwargs['username'])
+            return redirect('blog:profile', self.kwargs.get('username'))
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -138,7 +138,15 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         )
 
 
-class PostUpdateView(LoginRequiredMixin, UpdateView):
+class PostMixin:
+    def dispatch(self, request, *args, **kwargs):
+        post = get_object_or_404(Post, pk=self.kwargs.get('pk'))
+        if post.author != self.request.user:
+            return redirect('blog:post_detail', post.pk)
+        return super().dispatch(request, *args, **kwargs)
+
+
+class PostUpdateView(LoginRequiredMixin, PostMixin, UpdateView):
     '''Страница редактирования поста'''
     template_name = 'blog/create.html'
     model = Post
@@ -150,12 +158,6 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.post = self.kwargs.get('pk')
         return super().form_valid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        post = get_object_or_404(Post, pk=self.kwargs.get('pk'))
-        if post.author != self.request.user:
-            return redirect('blog:post_detail', post.pk)
-        return super().dispatch(request, *args, **kwargs)
-
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
@@ -163,17 +165,11 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class PostDeleteView(LoginRequiredMixin, DeleteView):
+class PostDeleteView(LoginRequiredMixin, PostMixin, DeleteView):
     '''Страница удаления поста'''
     template_name = 'blog/create.html'
     model = Post
     success_url = reverse_lazy('blog:index')
-
-    def dispatch(self, request, *args, **kwargs):
-        post = get_object_or_404(Post, pk=self.kwargs.get('pk'))
-        if post.author != self.request.user:
-            return redirect('blog:post_detail', post.pk)
-        return super().dispatch(request, *args, **kwargs)
 
 
 class PostDetailView(LoginRequiredMixin, DetailView):
