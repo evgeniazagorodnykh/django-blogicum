@@ -1,6 +1,6 @@
 from typing import Any, Dict
 from django.http import Http404
-from blog.models import Post, Category, Comment
+from blog.models import Post, Category
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.views.generic import (
@@ -12,6 +12,7 @@ from django.urls import reverse_lazy, reverse
 from django.core.paginator import Paginator
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from blog.mixins import PostMixin, CommentMixin
 
 dnow = timezone.now()
 User = get_user_model()
@@ -32,6 +33,7 @@ class IndexListView(LoginRequiredMixin, ListView):
 
 def category_posts(request, category_slug):
     '''Отображение постов в данной категории'''
+
     template = 'blog/category.html'
     category = get_object_or_404(
         Category.objects.values(
@@ -65,6 +67,7 @@ def category_posts(request, category_slug):
 
 class ProfileListView(ListView, LoginRequiredMixin):
     '''Страница пользователя'''
+
     template_name = 'blog/profile.html'
     model = User
     paginate_by = 10
@@ -93,6 +96,7 @@ class ProfileListView(ListView, LoginRequiredMixin):
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     '''Сраница редактирования профиля'''
+
     template_name = 'blog/user.html'
     model = User
     form_class = ChangeUserForm
@@ -123,6 +127,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 class PostCreateView(LoginRequiredMixin, CreateView):
     '''Страница создания поста'''
+
     template_name = 'blog/create.html'
     model = Post
     form_class = PostForm
@@ -138,16 +143,9 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         )
 
 
-class PostMixin:
-    def dispatch(self, request, *args, **kwargs):
-        post = get_object_or_404(Post, pk=self.kwargs.get('pk'))
-        if post.author != self.request.user:
-            return redirect('blog:post_detail', post.pk)
-        return super().dispatch(request, *args, **kwargs)
-
-
 class PostUpdateView(LoginRequiredMixin, PostMixin, UpdateView):
     '''Страница редактирования поста'''
+
     template_name = 'blog/create.html'
     model = Post
     form_class = PostForm
@@ -167,6 +165,7 @@ class PostUpdateView(LoginRequiredMixin, PostMixin, UpdateView):
 
 class PostDeleteView(LoginRequiredMixin, PostMixin, DeleteView):
     '''Страница удаления поста'''
+
     template_name = 'blog/create.html'
     model = Post
     success_url = reverse_lazy('blog:index')
@@ -174,6 +173,7 @@ class PostDeleteView(LoginRequiredMixin, PostMixin, DeleteView):
 
 class PostDetailView(LoginRequiredMixin, DetailView):
     '''Отображение деталий поста'''
+
     model = Post
     template_name = 'blog/detail.html'
     pk_url_kwarg = 'pk'
@@ -212,36 +212,13 @@ def add_comment(request, pk):
     return redirect('blog:post_detail', pk=pk)
 
 
-class CommentUpdateView(LoginRequiredMixin, UpdateView):
+class CommentUpdateView(LoginRequiredMixin, CommentMixin, UpdateView):
     '''Страница редактирования поста'''
-    template_name = 'blog/comment.html'
-    model = Comment
+
     form_class = CommentForm
-    pk_url_kwarg = 'pk'
-
-    def dispatch(self, request, *args, **kwargs):
-        comment = get_object_or_404(Comment, pk=self.kwargs.get('pk'))
-        if comment.author != self.request.user:
-            return redirect('blog:post_detail', self.kwargs.get('post_id'))
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_success_url(self):
-        return reverse('blog:post_detail',
-                       kwargs={'pk': self.kwargs.get('post_id')})
 
 
-class CommentDeleteView(LoginRequiredMixin, DeleteView):
+class CommentDeleteView(LoginRequiredMixin, CommentMixin, DeleteView):
     '''Страница удаления поста'''
-    template_name = 'blog/comment.html'
-    model = Comment
-    pk_url_kwarg = 'pk'
 
-    def dispatch(self, request, *args, **kwargs):
-        comment = get_object_or_404(Comment, pk=self.kwargs.get('pk'))
-        if comment.author != self.request.user:
-            return redirect('blog:post_detail', self.kwargs.get('post_id'))
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_success_url(self):
-        return reverse('blog:post_detail',
-                       kwargs={'pk': self.kwargs.get('post_id')})
+    pass
